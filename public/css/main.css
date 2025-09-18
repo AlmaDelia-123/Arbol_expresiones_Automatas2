@@ -1,0 +1,21 @@
+body { font-family: Arial; margin: 20px; }
+  #contenido_arbol { 
+    position: relative;      /* Necesario para colocar nodos con posiciones absolutas */
+    width: 100%;
+    height: 600px;           /* Altura del área del árbol */
+    border: 1px solid #d80b0b;  /* Borde para ver el contenedor */
+  }
+  .nodo {
+    position: absolute;      /* Posición absoluta para controlar x,y */
+    width: 40px;             /* Ancho fijo del nodo */
+    height: 40px;            /* Alto fijo del nodo */
+    border-radius: 50%;      /* Hace el nodo circular */
+    background: #4CAF50;     /* Verde para hojas */
+    color: white;            /* Texto blanco */
+    text-align: center;      /* Centrado horizontal */
+    line-height: 40px;       /* Centrado vertical */
+    font-weight: bold;       /* Texto en negrita */
+  }
+  .operador {
+    background: #2196F3;     /* Azul para operadores */
+  }
