@@ -79,6 +79,9 @@ function dibujarNodo(node, x = 400, y = 40, nivel = 1) {
   if (!node) return null; // Si no hay nodo → no hace nada
 
   const esOp = !!node.op;                // Detecta si es operador y se guarda en esOp
+// ! es un + entonces manda un false
+//! false --> se vuelve true
+
   const contenido = node.op || node.value; // Muestra operador o valor numérico
 
   const nodoHTML = crearNodoHTML(contenido, esOp); // Crea nodo HTML
