@@ -1,135 +1,173 @@
-// Expresión regular: solo permite dígitos (0-9), +, -, *, / y paréntesis
-const validacion = /^[0-9+\-*/()]+$/;
+// Expresión regular: permite dígitos, letras, +, -, *, / y paréntesis
+const validacion = /^[0-9a-zA-Z+\-*/()]+$/;
 
 // Referencia al contenedor HTML donde se dibujará el árbol
 const arbol = document.getElementById("contenido_arbol");
 
 // Estilos de las líneas que dibuja la librería LeaderLine
 const estilos = {
-  color: '#080808ff', 
-  outline: false,       
+  color: '#080808ff',
+  outline: false,
   endPlugOutline: false,
-  endPlugSize: 1,       
-  startPlug: 'behind',  
-  endPlug: 'behind'     
+  endPlugSize: 1,
+  startPlug: 'behind',
+  endPlug: 'behind'
 };
+
 // Guardará todas las líneas dibujadas para poder borrarlas después
 let lineas = [];
+
 // Elimina todas las líneas actuales
-function limpiarLineas() {          
-    lineas.forEach(l => l.remove());  // Borra cada línea con .remove()
-    lineas = [];                      // Vacía el arreglo (reinicia)
+function limpiarLineas() {
+  lineas.forEach(l => l.remove());
+  lineas = [];
 }
+
 // ====== PARSER (CONSTRUYE EL ÁRBOL) ======
-// Convierte un string como "(2+2)*(55+8)" en un objeto árbol
-// { op:'*', left:{op:'+', left:{value:'2'}, right:{value:'2'}}, right:{op:'+', ...} }
 function parse(exp) {
   exp = exp.replace(/\s+/g, ""); // Quita espacios en blanco
-  let pos = 0;                   // Posición actual al recorrer la cadena
+  let pos = 0;
 
-  // --- Maneja + y - (menor precedencia)
   function parseExpr() {
-    let node = parseTerm();                    // Lee primer término
-    while (exp[pos] === "+" || exp[pos] === "-") { // Mientras vea + o -
-      let op = exp[pos++];                     // Guarda el operador y avanza
-      node = { op, left: node, right: parseTerm() }; // Crea nodo operador
+    let node = parseTerm();
+    while (exp[pos] === "+" || exp[pos] === "-") {
+      let op = exp[pos++];
+      node = { op, left: node, right: parseTerm() };
     }
-    return node;                               // Devuelve el subárbol
+    return node;
   }
-  // --- Maneja * y / (mayor precedencia que + y -)
+
   function parseTerm() {
-    let node = parseFactor();                  // Lee primer factor
-    while (exp[pos] === "*" || exp[pos] === "/") { // Mientras vea * o /
-      let op = exp[pos++];                     // Guarda operador y avanza
-      node = { op, left: node, right: parseFactor() }; // Crea nodo operador
+    let node = parseFactor();
+    while (exp[pos] === "*" || exp[pos] === "/") {
+      let op = exp[pos++];
+      node = { op, left: node, right: parseFactor() };
     }
-    return node;                               // Devuelve subárbol
+    return node;
   }
-  // --- Maneja números o expresiones entre paréntesis
+
   function parseFactor() {
-    if (exp[pos] === "(") {       // Si encuentra '('
-      pos++;                      // Avanza (ignora '(')
-      let node = parseExpr();     // Procesa lo que hay dentro
-      pos++;                      // Avanza (ignora ')')
-      return node;                // Devuelve el nodo del interior
+    if (exp[pos] === "(") {
+      pos++;
+      const node = parseExpr();
+      if (exp[pos] !== ")") throw new Error("Falta ')'");
+      pos++;
+      return node;
     }
-    // Si no hay paréntesis → es un número
-    let start = pos;                          // Marca inicio del número
-    while (/\d/.test(exp[pos])) pos++;        // Avanza mientras haya dígitos
-    return { value: exp.slice(start, pos) };  // Devuelve nodo hoja con número
+
+    const start = pos;
+    while (pos < exp.length && /[0-9a-zA-Z]/.test(exp[pos])) pos++;
+
+    if (start === pos) {
+      throw new Error(`Caracter inválido '${exp[pos]}' en posición ${pos}`);
+    }
+
+    return { value: exp.slice(start, pos) };
   }
-  return parseExpr(); // Empieza desde el nivel de expresión
+
+  return parseExpr();
 }
+
 // ====== DIBUJO DEL ÁRBOL ======
-let contador = 0; // Contador para generar IDs únicos a cada nodo
+let contador = 0; // Contador para IDs únicos
+let arbolGenerado = null; // Guardará el último árbol generado
 
-// Crea un nodo HTML (un <div>) y lo mete al contenedor
 function crearNodoHTML(contenido, esOperador) {
-  const id = "n" + (contador++);                 // Genera ID único
-  const div = document.createElement("div");     // Crea un <div>
-  div.id = id;                                   // Le asigna el ID
-  // Si es operador (+ - * /) le agrega la clase "operador" además de "nodo"
+  const id = "n" + (contador++);
+  const div = document.createElement("div");
+  div.id = id;
   div.className = "nodo" + (esOperador ? " operador" : "");
-  div.textContent = contenido;                   // Texto dentro del círculo
-  arbol.appendChild(div);                        // Inserta el nodo al contenedor
-  return div;                                    // Devuelve el div creado
+  div.textContent = contenido;
+  arbol.appendChild(div);
+  return div;
 }
-// Función recursiva: dibuja el nodo actual, sus hijos y las líneas que los conectan
+
 function dibujarNodo(node, x = 400, y = 40, nivel = 1) {
-  if (!node) return null; // Si no hay nodo → no hace nada
+  if (!node) return null;
 
-  const esOp = !!node.op;                // Detecta si es operador y se guarda en esOp
-// ! es un + entonces manda un false
-//! false --> se vuelve true
+  const esOp = !!node.op;
+  const contenido = node.op || node.value;
 
-  const contenido = node.op || node.value; // Muestra operador o valor numérico
+  const nodoHTML = crearNodoHTML(contenido, esOp);
+  nodoHTML.style.left = (x - 20) + "px";
+  nodoHTML.style.top = (y - 20) + "px";
 
-  const nodoHTML = crearNodoHTML(contenido, esOp); // Crea nodo HTML
-  nodoHTML.style.left = (x - 20) + "px"; // Ajusta posición horizontal
-  nodoHTML.style.top = (y - 20) + "px";  // Ajusta posición vertical
+  const offset = 150 / nivel;
 
-  const offset = 150 / nivel; // Separación horizontal entre nodos hijos
-
-  // --- Dibujar hijo izquierdo (si existe) ---
   let leftHTML = null;
-  if (node.left) {
-    leftHTML = dibujarNodo(node.left, x - offset, y + 100, nivel + 1);
-  }
+  if (node.left) leftHTML = dibujarNodo(node.left, x - offset, y + 100, nivel + 1);
 
-  // --- Dibujar hijo derecho (si existe) ---
   let rightHTML = null;
-  if (node.right) {
-    rightHTML = dibujarNodo(node.right, x + offset, y + 100, nivel + 1);
-  }
+  if (node.right) rightHTML = dibujarNodo(node.right, x + offset, y + 100, nivel + 1);
 
-  // Conecta nodo padre con hijo izquierdo
-  if (leftHTML) {
-    const l = new LeaderLine(nodoHTML, leftHTML, estilos);
-    lineas.push(l); // Guarda línea en arreglo para poder borrarla después
-  }
-  // Conecta nodo padre con hijo derecho
-  if (rightHTML) {
-    const l = new LeaderLine(nodoHTML, rightHTML, estilos);
-    lineas.push(l);
-  }
+  if (leftHTML) lineas.push(new LeaderLine(nodoHTML, leftHTML, estilos));
+  if (rightHTML) lineas.push(new LeaderLine(nodoHTML, rightHTML, estilos));
 
-  return nodoHTML; // Devuelve el div del nodo actual
+  return nodoHTML;
 }
 
-// funcion del botón "Generar"
-document.getElementById("btn_generar").addEventListener("click", () => {
-  const exp = document.getElementById("expresion").value; // Lee la expresión del input
+// ====== RECORRIDOS SEGÚN CONVENCIÓN DE CLASE ======
+function recorrerPreorden(node, resultado) {
+  if (!node) return;
+  // Según tu clase: Nodo izquierdo + Nodo + Nodo derecho
+  if (node.left) recorrerPreorden(node.left, resultado);
+  resultado.push(node.op || node.value);
+  if (node.right) recorrerPreorden(node.right, resultado);
+}
 
-  // Valida que solo haya caracteres permitidos
+function recorrerInorden(node, resultado) {
+  if (!node) return;
+  // Según tu clase: Nodo izquierdo + Nodo derecho + Nodo
+  if (node.left) recorrerInorden(node.left, resultado);
+  if (node.right) recorrerInorden(node.right, resultado);
+  resultado.push(node.op || node.value);
+}
+
+function recorrerPostorden(node, resultado) {
+  if (!node) return;
+  // Según tu clase: Nodo + Nodo izquierdo + Nodo derecho
+  resultado.push(node.op || node.value);
+  if (node.left) recorrerPostorden(node.left, resultado);
+  if (node.right) recorrerPostorden(node.right, resultado);
+}
+
+// ====== BOTONES ======
+
+// Generar árbol
+document.getElementById("btn_generar").addEventListener("click", () => {
+  const exp = document.getElementById("expresion").value;
+
   if (!validacion.test(exp)) {
-    alert("Expresión no válida"); 
-    return;                       // Detiene ejecución
+    alert("Expresión no válida");
+    return;
   }
 
-  arbol.innerHTML = ""; // Borra los nodos dibujados anteriormente
-  limpiarLineas();      // Borra las líneas anteriores
-  contador = 0;         // Reinicia el contador de IDs
+  arbol.innerHTML = "";
+  limpiarLineas();
+  contador = 0;
 
-  const tree = parse(exp); // Convierte la expresión en un árbol (parser)
-  dibujarNodo(tree);       // Dibuja el árbol en pantalla
+  try {
+    arbolGenerado = parse(exp); // Guardamos árbol generado
+    dibujarNodo(arbolGenerado);
+  } catch (e) {
+    alert("Error al generar árbol: " + e.message);
+  }
+});
+
+// Mostrar recorrido
+document.getElementById("btn_mostrar_recorrido").addEventListener("click", () => {
+  if (!arbolGenerado) {
+    alert("Primero genera un árbol con una expresión");
+    return;
+  }
+
+  const tipo = document.getElementById("orden").value;
+  let resultado = [];
+
+  if (tipo === "preorden") recorrerPreorden(arbolGenerado, resultado);
+  else if (tipo === "postorden") recorrerPostorden(arbolGenerado, resultado);
+  else recorrerInorden(arbolGenerado, resultado);
+
+  document.getElementById("resultado").innerText =
+    `Recorrido (${tipo}): ${resultado.join(" ")}`;
 });

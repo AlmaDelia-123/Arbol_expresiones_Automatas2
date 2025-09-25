@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="public/css/main.css">
     <script src="public/js/popper.js"></script>
     <script src="public/js/bootstrap.js"></script>
-    <script src="public/js/leader-line.js"></script>
     <title>Arbol de Expresiones</title>
 </head>
 <body>
@@ -18,17 +17,37 @@
                 <hr>
                 <hr>
             </div>
+        </div>
+            <!-- sección de generación y resultado -->
+        <div class="row justify-content-around mt-4">
             <div class="col-4 ">
-                <label for="expresion">Ingresa una operacion matematica simple</label>
-                <input type="text" class="form-control" id="expresion"> <br>
-                <button id="btn_generar" class="btn btn-primary w-100 mb-3">Generar arbol</button>
+                <label for="expresion">Ingresa una operación matemática simple</label>
+                <input type="text" class="form-control" id="expresion" placeholder="ej: (a+b)*c"> <br>
+                <button type="button" id="btn_generar" class="btn btn-primary">Generar árbol</button>
             </div>
+
             <div class="col-7">
                 <div id="contenido_arbol" class="border border-primary" style="height: 400px; position: relative;"></div>
             </div>
         </div>
-    </div>
 
+        <!-- sección de recorridos / árbol ordenado -->
+        <div class="row justify-content-around mt-4">
+            <div class="col">
+                <label for="orden">Elegir recorrido:</label>
+                <select id="orden" class="form-select d-inline-block w-auto">
+                <option value="preorden">Preorden</option>
+                <option value="inorden" selected>Inorden</option>
+                <option value="postorden">Postorden</option>
+                </select>
+                <button type="button" id="btn_mostrar_recorrido" class="btn btn-success">Mostrar recorrido</button>
+
+                <div id="resultado" class="mt-3 border p-2">Árbol ordenado aquí...</div>
+            </div>
+        </div>
+
+    </div>
+    <script src="public/js/leader-line.js"></script>
     <script src="public/js/main.js"></script>
 </body>
 </html>
